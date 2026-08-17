@@ -33,6 +33,7 @@ import {
   X
 } from 'lucide-react';
 import './styles.css';
+import { stripBasePath, withBasePath } from './base-path';
 import { isSupabaseConfigured, supabase } from './supabaseClient';
 import { CommunityAdminSection, CommunityPage } from './community';
 import skillExampleImage from '../agents/skills/gpt-image-2-style-library/assets/city-life-system-map.png';
@@ -1166,7 +1167,7 @@ function WeChatIcon({ size = 17 }) {
 function CommunityNavItem({ language }) {
   const t = copy[language];
   return (
-    <a className="communityNavLink" href="/community" aria-label={t.navCommunity}>
+    <a className="communityNavLink" href={withBasePath('/community')} aria-label={t.navCommunity}>
       <WeChatIcon />
       {t.navCommunity}
     </a>
@@ -1267,7 +1268,7 @@ function AuthModal({ open, language, initialErrorCode, onClose }) {
 
     setStatus('loading-watcha');
     setMessage('');
-    window.location.assign(`/api/auth/watcha/start?returnTo=${encodeURIComponent(redirectTo)}`);
+    window.location.assign(withBasePath(`/api/auth/watcha/start?returnTo=${encodeURIComponent(redirectTo)}`));
   }
 
   return (
@@ -1500,7 +1501,7 @@ function AccountPanel({
     setStatus('loading');
     setMessage('');
     try {
-      const response = await fetch('/api/me', {
+      const response = await fetch(withBasePath('/api/me'), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -1860,8 +1861,8 @@ function AdminPanel({ open, language, session, casesById, onClose, onOpenCase })
         params.set('end', nextEnd);
       }
       const [usersResponse, metricsResponse] = await Promise.all([
-        fetch('/api/admin/users', { headers }),
-        fetch(`/api/admin/metrics?${params.toString()}`, { headers })
+        fetch(withBasePath('/api/admin/users'), { headers }),
+        fetch(withBasePath(`/api/admin/metrics?${params.toString()}`), { headers })
       ]);
       const usersPayload = await usersResponse.json().catch(() => ({}));
       const metricsPayload = await metricsResponse.json().catch(() => ({}));
@@ -1901,7 +1902,7 @@ function AdminPanel({ open, language, session, casesById, onClose, onOpenCase })
     setMessage('');
 
     try {
-      const response = await fetch('/api/admin/credits/adjust', {
+      const response = await fetch(withBasePath('/api/admin/credits/adjust'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2254,9 +2255,9 @@ function BillingPanel({
     try {
       const headers = getAuthHeaders(session);
       const [plansResponse, historyResponse] = await Promise.all([
-        fetch('/api/billing/plans', { headers }),
+        fetch(withBasePath('/api/billing/plans'), { headers }),
         session?.access_token
-          ? fetch('/api/billing/history', { headers })
+          ? fetch(withBasePath('/api/billing/history'), { headers })
           : Promise.resolve(null)
       ]);
       const plansPayload = await plansResponse.json().catch(() => ({}));
@@ -2312,7 +2313,7 @@ function BillingPanel({
 
     try {
       const response = await fetch(
-        provider === 'alipay' ? '/api/billing/alipay/checkout' : '/api/billing/checkout',
+        withBasePath(provider === 'alipay' ? '/api/billing/alipay/checkout' : '/api/billing/checkout'),
         {
         method: 'POST',
         headers: {
@@ -2353,7 +2354,7 @@ function BillingPanel({
     setMessage('');
 
     try {
-      const response = await fetch('/api/billing/portal', {
+      const response = await fetch(withBasePath('/api/billing/portal'), {
         method: 'POST',
         headers: getAuthHeaders(session)
       });
@@ -2869,7 +2870,7 @@ function PreviewDialog({
     setGenerationState({ status: 'generating', image: '', message: '' });
 
     try {
-      const response = await fetch('/api/generate-image', {
+      const response = await fetch(withBasePath('/api/generate-image'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -3110,13 +3111,20 @@ function App() {
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      fetch('/cases.json').then((response) => response.json()),
-      fetch('/style-library.json').then((response) => response.json())
+      fetch(withBasePath('/cases.json')).then((response) => response.json()),
+      fetch(withBasePath('/style-library.json')).then((response) => response.json())
     ])
       .then(([payload, library]) => {
         if (!cancelled) {
-          setSiteData(payload);
-          setStyleLibrary(library);
+          setSiteData({
+            ...payload,
+            cases: (payload.cases || []).map((caseItem) => ({ ...caseItem, image: withBasePath(caseItem.image) }))
+          });
+          setStyleLibrary({
+            ...library,
+            categories: (library.categories || []).map((category) => ({ ...category, cover: withBasePath(category.cover) })),
+            templates: (library.templates || []).map((template) => ({ ...template, cover: withBasePath(template.cover) }))
+          });
         }
       });
     return () => {
@@ -3180,7 +3188,7 @@ function App() {
       };
     }
 
-    fetch('/api/me', {
+    fetch(withBasePath('/api/me'), {
       headers: getAuthHeaders(session)
     })
       .then((response) => response.json())
@@ -3205,7 +3213,7 @@ function App() {
     }
 
     try {
-      const response = await fetch('/api/favorites', {
+      const response = await fetch(withBasePath('/api/favorites'), {
         headers: getAuthHeaders(session)
       });
       const payload = await response.json().catch(() => ({}));
@@ -3288,7 +3296,7 @@ function App() {
     alipayReturnHandledRef.current = handledKey;
 
     let cancelled = false;
-    fetch(`/api/billing/alipay/query?orderId=${encodeURIComponent(billingReturnOrderId)}`, {
+    fetch(withBasePath(`/api/billing/alipay/query?orderId=${encodeURIComponent(billingReturnOrderId)}`), {
       headers: getAuthHeaders(session)
     })
       .then(async (response) => {
@@ -3420,7 +3428,7 @@ function App() {
     }
 
     try {
-      const response = await fetch(isFavorite ? `/api/favorites?caseId=${caseId}` : '/api/favorites', {
+      const response = await fetch(withBasePath(isFavorite ? `/api/favorites?caseId=${caseId}` : '/api/favorites'), {
         method: isFavorite ? 'DELETE' : 'POST',
         headers: {
           ...(isFavorite ? {} : { 'Content-Type': 'application/json' }),
@@ -3466,7 +3474,7 @@ function App() {
     setAccountInitialSection('overview');
   }
 
-  const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/';
+  const normalizedPath = stripBasePath(window.location.pathname).replace(/\/+$/, '') || '/';
   const isCommunityRoute = normalizedPath === '/community' || normalizedPath === '/community/result';
 
   if (isCommunityRoute) {

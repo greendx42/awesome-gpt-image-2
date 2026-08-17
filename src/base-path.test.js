@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { stripBasePath, withBasePath } from './base-path.js';
 
@@ -20,4 +21,14 @@ test('withBasePath keeps external and browser URLs unchanged', () => {
 test('stripBasePath exposes app-relative routes', () => {
   assert.equal(stripBasePath('/gpt-image-2/community/result', '/gpt-image-2/'), '/community/result');
   assert.equal(stripBasePath('/community', '/'), '/community');
+});
+
+test('runtime requests and community links use the base path helper', async () => {
+  const main = await readFile(new URL('./main.jsx', import.meta.url), 'utf8');
+  const community = await readFile(new URL('./community.jsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(main, /fetch\(\s*[`'"]\/api\//);
+  assert.doesNotMatch(main, /fetch\(\s*['"]\/(?:cases|style-library)\.json/);
+  assert.doesNotMatch(community, /fetch\(\s*[`'"]\/api\//);
+  assert.match(main, /withBasePath\(['"]\/community['"]\)/);
+  assert.match(community, /withBasePath\(['"]\/community['"]\)/);
 });

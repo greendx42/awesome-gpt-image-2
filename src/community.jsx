@@ -20,6 +20,7 @@ import {
   Wrench
 } from 'lucide-react';
 import officialAccountQr from './assets/canghe-official-account.png';
+import { stripBasePath, withBasePath } from './base-path';
 import './community.css';
 
 const TERMS_VERSION = '2026-07-22';
@@ -180,7 +181,7 @@ export function CommunityPage({
   const [qrUrl, setQrUrl] = useState('');
   const [qrState, setQrState] = useState('idle');
   const resultQueryRef = useRef('');
-  const isResultPage = window.location.pathname.replace(/\/+$/, '') === '/community/result';
+  const isResultPage = stripBasePath(window.location.pathname).replace(/\/+$/, '') === '/community/result';
   const resultOrderId = useMemo(
     () => new URLSearchParams(window.location.search).get('order_id') || '',
     []
@@ -198,7 +199,7 @@ export function CommunityPage({
     if (!session?.access_token) return;
     setQrState('loading');
     try {
-      const response = await fetch('/api/community/qr', {
+      const response = await fetch(withBasePath('/api/community/qr'), {
         headers: authHeaders(session),
         cache: 'no-store'
       });
@@ -225,7 +226,7 @@ export function CommunityPage({
   }, [session?.access_token]);
 
   const loadStatus = useCallback(async () => {
-    const response = await fetch('/api/community/status', {
+    const response = await fetch(withBasePath('/api/community/status'), {
       headers: authHeaders(session),
       cache: 'no-store'
     });
@@ -249,7 +250,7 @@ export function CommunityPage({
     setPhase('checking');
     setMessage('');
     Promise.all([
-      fetch('/api/community/config', { cache: 'no-store' }).then((response) => response.json()),
+      fetch(withBasePath('/api/community/config'), { cache: 'no-store' }).then((response) => response.json()),
       loadStatus()
     ])
       .then(([configPayload]) => {
@@ -282,7 +283,7 @@ export function CommunityPage({
     async function confirmAndPoll() {
       setPhase('checking');
       try {
-        const response = await fetch(`/api/community/alipay/query?orderId=${encodeURIComponent(resultOrderId)}`, {
+        const response = await fetch(withBasePath(`/api/community/alipay/query?orderId=${encodeURIComponent(resultOrderId)}`), {
           headers: authHeaders(session),
           cache: 'no-store'
         });
@@ -319,7 +320,7 @@ export function CommunityPage({
     setPhase('redirecting');
     setMessage('');
     try {
-      const response = await fetch('/api/community/alipay/checkout', {
+      const response = await fetch(withBasePath('/api/community/alipay/checkout'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -359,7 +360,7 @@ export function CommunityPage({
     setPhase('checking');
     setMessage('');
     try {
-      const response = await fetch(`/api/community/alipay/query?orderId=${encodeURIComponent(orderId)}`, {
+      const response = await fetch(withBasePath(`/api/community/alipay/query?orderId=${encodeURIComponent(orderId)}`), {
         headers: authHeaders(session),
         cache: 'no-store'
       });
@@ -379,7 +380,7 @@ export function CommunityPage({
     setPhase('checking');
     setMessage('');
     try {
-      const response = await fetch('/api/community/alipay/close', {
+      const response = await fetch(withBasePath('/api/community/alipay/close'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -414,9 +415,9 @@ export function CommunityPage({
   return (
     <div className="communityPage">
       <header className="communityTopbar">
-        <a className="communityBrand" href="/community"><Users size={20} />{t.brand}</a>
+        <a className="communityBrand" href={withBasePath('/community')}><Users size={20} />{t.brand}</a>
         <nav>
-          <a href="/"><ArrowLeft size={16} />{t.back}</a>
+          <a href={withBasePath('/')}><ArrowLeft size={16} />{t.back}</a>
           <div className="communityLanguage" aria-label="Language">
             <button className={language === 'en' ? 'active' : ''} type="button" onClick={() => setLanguage('en')}>EN</button>
             <button className={language === 'zh' ? 'active' : ''} type="button" onClick={() => setLanguage('zh')}>中文</button>
@@ -551,8 +552,8 @@ export function CommunityAdminSection({ language, session }) {
     try {
       const headers = authHeaders(session);
       const [ordersResponse, qrResponse] = await Promise.all([
-        fetch('/api/admin/community/orders', { headers, cache: 'no-store' }),
-        fetch('/api/admin/community/qr?metadata=1', { headers, cache: 'no-store' })
+        fetch(withBasePath('/api/admin/community/orders'), { headers, cache: 'no-store' }),
+        fetch(withBasePath('/api/admin/community/qr?metadata=1'), { headers, cache: 'no-store' })
       ]);
       const ordersPayload = await ordersResponse.json().catch(() => ({}));
       if (!ordersResponse.ok || !ordersPayload.ok) throw new Error(ordersPayload.error || 'COMMUNITY_ADMIN_ORDERS_FAILED');
@@ -560,7 +561,7 @@ export function CommunityAdminSection({ language, session }) {
       if (qrResponse.ok) {
         const qrPayload = await qrResponse.json().catch(() => ({}));
         setQrMeta(qrPayload.asset || null);
-        const imageResponse = await fetch(`/api/admin/community/qr?v=${encodeURIComponent(qrPayload.asset?.id || '')}`, {
+        const imageResponse = await fetch(withBasePath(`/api/admin/community/qr?v=${encodeURIComponent(qrPayload.asset?.id || '')}`), {
           headers,
           cache: 'no-store'
         });
@@ -601,7 +602,7 @@ export function CommunityAdminSection({ language, session }) {
     }
     setStatus('loading');
     try {
-      const response = await fetch('/api/admin/community/qr', {
+      const response = await fetch(withBasePath('/api/admin/community/qr'), {
         method: 'POST',
         headers: { 'Content-Type': file.type, ...authHeaders(session) },
         body: file
@@ -623,9 +624,9 @@ export function CommunityAdminSection({ language, session }) {
     setMessage('');
     try {
       const isQuery = action === 'refund-query';
-      const url = isQuery
+      const url = withBasePath(isQuery
         ? `/api/admin/community/refund-query?orderId=${encodeURIComponent(order.id)}`
-        : `/api/admin/community/${action}`;
+        : `/api/admin/community/${action}`);
       const response = await fetch(url, {
         method: isQuery ? 'GET' : 'POST',
         headers: isQuery ? authHeaders(session) : { 'Content-Type': 'application/json', ...authHeaders(session) },

@@ -124,6 +124,12 @@ Run: 请求 `/gpt-image-2/community` 和 `/gpt-image-2/api/me`。
 
 Expected: `/gpt-image-2/community` 返回 200；`/gpt-image-2/api/me` 返回 503 和 `API_NOT_CONFIGURED`。
 
+- [ ] **Step 3a: 验证子路径运行时资源与原站隔离**
+
+Run: 请求 `/gpt-image-2/cases.json` 与 `/gpt-image-2/style-library.json`，检查响应 `Content-Type` 为 JSON；在浏览器检查案例和模板图片请求均以 `/gpt-image-2/images/` 为前缀；访问 `/gpt-image-2/community` 并确认页面实际进入社区路由；再请求 IP 根首页。
+
+Expected: 两份 JSON 均以 JSON Content-Type 返回，图片不落到 `/images/*` 根路径，社区页面不会被图库路由接管，IP 根首页仍显示原电商 BI 站点。
+
 - [x] **Step 4: 更新纪要并提交文档**
 
 Run: 将部署时间、端口、release 路径、验证结果和 API 限制写入项目纪要，执行 `git diff --check` 后仅提交相关文档。

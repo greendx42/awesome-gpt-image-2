@@ -13,6 +13,11 @@
 - 资格规则：仅 `PAID` 有效；退款处理中保持 `PAID`；支付宝确认退款成功后改为 `REFUNDED`
 - 群码：数据库 `bytea` 资源，限 PNG/JPEG/WebP、最大 2 MB，管理员通过事务 RPC 原子替换
 
+## 部署路径
+
+- 页面与 API 地址均通过 Vite `base` 派生：根路径部署继续使用 `/community` 与 `/api/community/*`，以 `/gpt-image-2/` 构建时则使用 `/gpt-image-2/community` 与 `/gpt-image-2/api/community/*`。
+- 支付回跳和结果页也按同一前缀识别，避免请求或导航落到同 IP 的根站点。
+
 ## API
 
 公开与当前用户：
