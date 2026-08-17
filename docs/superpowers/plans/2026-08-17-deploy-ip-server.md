@@ -124,11 +124,23 @@ Run: 请求 `/gpt-image-2/community` 和 `/gpt-image-2/api/me`。
 
 Expected: `/gpt-image-2/community` 返回 200；`/gpt-image-2/api/me` 返回 503 和 `API_NOT_CONFIGURED`。
 
-- [ ] **Step 3a: 验证子路径运行时资源与原站隔离**
+- [x] **Step 3a: 验证子路径运行时资源与原站隔离**
 
 Run: 请求 `/gpt-image-2/cases.json` 与 `/gpt-image-2/style-library.json`，检查响应 `Content-Type` 为 JSON；在浏览器检查案例和模板图片请求均以 `/gpt-image-2/images/` 为前缀；访问 `/gpt-image-2/community` 并确认页面实际进入社区路由；再请求 IP 根首页。
 
 Expected: 两份 JSON 均以 JSON Content-Type 返回，图片不落到 `/images/*` 根路径，社区页面不会被图库路由接管，IP 根首页仍显示原电商 BI 站点。
+
+### 2026-08-17 子路径修复重新部署记录
+
+- 源码提交：`a463a7a`（部署时 HEAD；功能提交为 `a83178d`）。
+- 本地验证：`npm.cmd test` 通过 33/33；`npm.cmd run build -- --base=/gpt-image-2/` 退出码 0；`dist` 共 554 个文件、159694573 字节，`dist/index.html` 为 604 字节。
+- 归档验证：`awesome-gpt-image-2-20260817-1149.tar.gz` 为 153385756 字节；本地与服务器 SHA-256 均为 `e8672fab2fea6c52e4d21e9703ee8861711608d2021089dfd87136b2c36b0010`。
+- 版本切换：旧目标 `/opt/awesome-gpt-image-2/releases/20260817-1038`；新目标 `/opt/awesome-gpt-image-2/releases/20260817-1149`；新 release 共 554 个文件，目录权限 755、文件权限 644、所有权 `root:root`，切换前 `nginx -t` 输出 `syntax is ok` 与 `test is successful`，随后用 `ln -sfn` 更新 `current`。
+- 链接与服务：`/opt/awesome-gpt-image-2/current` 和 `/opt/ecommerce-bi/dist/gpt-image-2` 最终均解析到新目标；Nginx 为 `active`，服务器本机图库与根首页均返回 200；未修改 Nginx 配置或生产密钥。
+- 公网 HTTP：`/gpt-image-2/` 为 `200 text/html`；`cases.json` 为 `200 application/json`（517 个案例）；`style-library.json` 为 `200 application/json`；`images/case520.jpg` 为 `200 image/jpeg`；`/gpt-image-2/community` 为 `200 text/html`；`/gpt-image-2/api/me` 为 `503 application/json` 且正文为 `{"error":"API_NOT_CONFIGURED"}`；`/` 为 `200 text/html` 且仍含“电商BI数据看板”。
+- 真实浏览器与日志：Chrome 标记会话加载标题 `GPT-Image2 Prompt Gallery`；应用内浏览器社区标签在前端初始化后显示 `GPT-Image2 Paid Community`。从 `/var/log/nginx/ecommerce_bi_access.log` 基线第 146 行之后检出 61 条带 `codex_task3` 标记的浏览器请求，其中 4 次子路径 JSON、39 次 `/gpt-image-2/images/*`，并触发 `/gpt-image-2/api/community/config` 与 `/gpt-image-2/api/community/status`，根路径 `/cases.json`、`/style-library.json`、`/images/*`、`/api/me` 逃逸计数为 0。
+- 回滚：如需回滚，重新执行 `ln -sfn /opt/awesome-gpt-image-2/releases/20260817-1038 /opt/awesome-gpt-image-2/current`，然后验证链接、`nginx -t`、Nginx active 与公网矩阵；旧 release 未修改也未删除。
+- 验收 concern：浏览器控制接口对图库卡片的深度 DOM 快照、局部 locator 与截图均超时；因此卡片执行证据采用浏览器标题与同一标记会话成功请求 JSON 和 39 张子路径图片交叉证明，并保留该工具限制，不声称取得了未返回的卡片 DOM 快照。
 
 - [x] **Step 4: 更新纪要并提交文档**
 
