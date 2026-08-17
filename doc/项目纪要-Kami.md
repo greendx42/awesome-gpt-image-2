@@ -10,6 +10,7 @@
 - ❓ 待确认：无本轮部署相关待确认项。
 
 ## 决策记录（实时追加，宁滥勿缺）
+- [08-17-2026 12:25:22] 最终审查修正首次推送成功｜背景：实施计划 17 个完成步骤已改为 `[x]` 并提交为 `9dd2028`，需要清除先前本地领先远端的 Important finding，并确认不是只依赖本地 remote-tracking ref｜结论：`git push` 成功将远端 `codex/subpath-compatibility` 从 `a463a7a` 推进到 `9dd2028`；随后 `git ls-remote` 返回 `9dd2028a77b0214008529875a8587c671854843c`，与本地 HEAD 完全相等，先前两个未推送文档提交也已包含在远端；本次纪要回写将作为最后文档同步再次推送，并在 Task 3 报告记录最终远端 SHA｜来源：AI
 - [08-17-2026 12:23:53] 最终分支审查文档状态修正｜背景：最终审查发现实施计划虽声明以复选框跟踪，但 Task 1-3 已完成的 17 个步骤仍为未勾选，同时分支有两个部署文档提交因先前 GitHub 443 故障未推送；本轮拉取已成功，证明网络恢复｜结论：按用户要求仅修正文档状态，将 Task 1-3 的全部已完成步骤改为 `[x]`，不改业务代码、不重新部署；提交后推送完整 `codex/subpath-compatibility` 分支，并以远端分支 SHA 等于最终本地 HEAD 作为同步完成条件｜来源：用户
 - [08-17-2026 12:06:44] Task 3 验收记录提交与推送状态｜背景：重新部署、最终测试/构建、服务器链接、`nginx -t` 与公网矩阵复核完成，需按协作规约提交并同步部署计划和项目纪要｜结论：已创建本地提交 `fba36a9`（`记录子路径修复重新部署结果`）；`git push` 因无法连接 GitHub 443 失败，当前不原样重试，保留本地提交并在网络恢复后推送 `codex/subpath-compatibility`｜来源：AI
 - [08-17-2026 12:03:34] Task 3 生产验收结论｜背景：新 release 切换后需同时证明子路径资源、社区路由、未配置 API 边界和原电商首页无回归；浏览器控制接口能取得页面标题和标签状态，但对图库卡片深度 DOM/截图读取持续超时｜结论：保留生产 release `20260817-1149`：公网首页/JSON/图片/社区/根首页响应符合预期，`/gpt-image-2/api/me` 为 503 `API_NOT_CONFIGURED`；真实 Chrome 会话日志记录 61 条标记请求、4 次子路径 JSON 与 39 次子路径图片，根路径逃逸为 0，应用内浏览器社区标签标题为 `GPT-Image2 Paid Community`；深度卡片 DOM/截图接口超时作为验收 concern 如实记录，以浏览器标题和同会话资源日志交叉证明页面已执行并创建图片请求｜来源：AI
@@ -49,13 +50,13 @@
 
 ## 待解决问题
 - 评估 `npm audit` 报告的 3 个高危依赖项及兼容升级方案。
-- GitHub 443 网络恢复后确认本轮验收记录已推送至远端；本轮提交前两次拉取均因连接失败而未完成。
 - 用户决定是否卸载 `gpt-image-2-style-library@awesome-gpt-image-2` 插件。
 
 ## 工作文件集
 - `doc/项目纪要-Kami.md`
 - `docs/superpowers/plans/2026-08-17-deploy-ip-server.md`
+- `docs/superpowers/plans/2026-08-17-subpath-compatibility.md`
 - `package.json`
 - `package-lock.json`
 - `README.md`
-- 文档同步：已同步 `doc/项目纪要-Kami.md` 与 `docs/superpowers/plans/2026-08-17-deploy-ip-server.md` 的 release、验证、回滚和隔离结果；本轮未修改业务代码、页面、生产 Nginx 配置或产品需求，无其他业务文档影响。
+- 文档同步：已同步 Kami 纪要、IP 部署计划及子路径兼容实施计划；Task 1-3 的 17 个完成步骤均为 `[x]`，release、验证、回滚、隔离和 Git 推送状态一致。本轮未修改业务代码、页面、生产 Nginx 配置或产品需求，无其他业务文档影响。
